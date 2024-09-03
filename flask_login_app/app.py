@@ -26,7 +26,7 @@ def create_db_connection():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
             cursor = connection.cursor()
-            cursor.execute("select database();")
+            cursor.execute("SELECT DATABASE();")
             record = cursor.fetchone()
             print("You're connected to database: ", record)
     except Error as e:
@@ -45,19 +45,22 @@ def login():
         
         # Create a connection to the database
         connection = create_db_connection()
-        cursor = connection.cursor()
+        if connection:
+            cursor = connection.cursor()
 
-        # Query untuk memeriksa kredensial pengguna
-        cursor.execute("SELECT * FROM users WHERE email=%s AND password=%s", (email, password))
-        user = cursor.fetchone()
+            # Query to check user credentials
+            cursor.execute("SELECT * FROM users WHERE email=%s AND password=%s", (email, password))
+            user = cursor.fetchone()
 
-        cursor.close()
-        connection.close()
+            cursor.close()
+            connection.close()
 
-        if user:
-            return "Login successful!"
+            if user:
+                return "Login successful!"
+            else:
+                return "Invalid credentials. Please try again."
         else:
-            return "Invalid credentials. Please try again."
+            return "Failed to connect to the database."
 
     return render_template('login.html')
 
