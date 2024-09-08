@@ -6,11 +6,11 @@ import os
 app = Flask(__name__)
 
 # Database configuration
-hostname = "exp.h.filess.io"
-database = "UserLogin_rockycryif"
-port = "3307"
-db_username = "UserLogin_rockycryif"
-db_password = "f0f4c9473f3c8f041b68f826788a66782248be0c"
+hostname = "exp.h.filess.io"  # Ganti dengan hostname Anda
+database = "UserLogin_rockycryif"  # Ganti dengan nama database Anda
+port = "3307"  # Ganti dengan port database Anda
+db_username = "UserLogin_rockycryif"  # Ganti dengan username database Anda
+db_password = "f0f4c9473f3c8f041b68f826788a66782248be0c"  # Ganti dengan password database Anda
 
 def get_db_connection():
     try:
