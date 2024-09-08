@@ -13,16 +13,18 @@ def login():
         password = request.form['password']
         
         if username == USER_DATA['username'] and password == USER_DATA['password']:
-            return redirect(url_for('welcome'))
+            # Jika login berhasil, redirect ke halaman sukses
+            return redirect(url_for('login_success'))
         else:
-            return render_template('login.html', error="Invalid credentials, please try again.")
+            # Jika login gagal, kembali ke halaman login dengan pesan error
+            return render_template('login.html', error="Invalid username or password. Please try again.")
     
     return render_template('login.html')
 
-@app.route('/welcome')
-def welcome():
-    return "Welcome to the protected area!"
+@app.route('/login_success')
+def login_success():
+    return "Login successful! Welcome to the application."
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # Mengambil PORT dari variabel lingkungan
-    app.run(host='0.0.0.0', port=port, debug=True)  # Menggunakan host 0.0.0.0
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
