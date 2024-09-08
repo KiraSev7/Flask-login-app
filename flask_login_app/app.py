@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from supabase import create_client, Client
 import os
 
@@ -12,6 +12,8 @@ supabase: Client = create_client(url, key)
 
 @app.route('/')
 def index():
+    if 'username' in session:
+        return render_template('index.html', username=session['username'])
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -24,7 +26,8 @@ def login():
             response = supabase.table('users').select('*').eq('username', username).single().execute()
             user = response.data
             if user and user.get('password') == password:
-                return redirect(url_for('login_success'))
+                session['username'] = username
+                return redirect(url_for('index'))
             else:
                 flash("Invalid username or password. Please try again.", 'error')
         except Exception as e:
@@ -37,6 +40,7 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        ip_address = request.remote_addr  # Mendapatkan alamat IP pengguna
         
         try:
             # Cek apakah username sudah ada
@@ -44,20 +48,26 @@ def signup():
             existing_user = response.data
             
             if existing_user:
-                # Jika username sudah ada, beri tahu pengguna
                 flash('Username already exists. Please choose a different username.', 'error')
             else:
-                # Simpan data pengguna baru ke Supabase
-                insert_response = supabase.table('users').insert({
-                    'username': username,
-                    'password': password
-                }).execute()
+                # Cek apakah alamat IP sudah digunakan
+                ip_check_response = supabase.table('users').select('*').eq('ip_address', ip_address).execute()
+                existing_ip_user = ip_check_response.data
                 
-                # Cek apakah data berhasil disimpan
-                if insert_response.data:
-                    flash('Your account has been created! You can now log in.', 'success')
+                if existing_ip_user:
+                    flash('An account has already been created from this IP address.', 'error')
                 else:
-                    flash('An error occurred while creating your account. Please try again.', 'error')
+                    # Simpan data pengguna baru ke Supabase
+                    insert_response = supabase.table('users').insert({
+                        'username': username,
+                        'password': password,
+                        'ip_address': ip_address
+                    }).execute()
+                    
+                    if insert_response.data:
+                        flash('Your account has been created! You can now log in.', 'success')
+                    else:
+                        flash('An error occurred while creating your account. Please try again.', 'error')
         except Exception as e:
             flash('An error occurred while trying to sign up. Please try again.', 'error')
     
@@ -66,6 +76,11 @@ def signup():
 @app.route('/login_success')
 def login_success():
     return "Login successful! Welcome to the application."
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
