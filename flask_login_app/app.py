@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, jsonify
 import mysql.connector
 from mysql.connector import Error
 import os
@@ -24,21 +24,18 @@ def get_db_connection():
         if connection.is_connected():
             return connection
     except Error as e:
-        print("Error while connecting to MySQL", e)
-        return None
+        return str(e)
 
 @app.route('/')
 def index():
-    connection = get_db_connection()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users")
-        users = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('index.html', users=users)
+    connection_status = get_db_connection()
+    if isinstance(connection_status, str):
+        # Return error message
+        return f"Error connecting to the database: {connection_status}"
     else:
-        return "Error connecting to the database."
+        # Close the connection and return success message
+        connection_status.close()
+        return "Successfully connected to the database."
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
