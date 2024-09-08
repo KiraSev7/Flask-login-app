@@ -1,41 +1,29 @@
-from flask import Flask, jsonify
-import mysql.connector
-from mysql.connector import Error
+from flask import Flask, render_template, request, redirect, url_for
 import os
 
 app = Flask(__name__)
 
-# Database configuration
-hostname = "exp.h.filess.io"  # Ganti dengan hostname Anda
-database = "UserLogin_rockycryif"  # Ganti dengan nama database Anda
-port = "3307"  # Ganti dengan port database Anda
-db_username = "UserLogin_rockycryif"  # Ganti dengan username database Anda
-db_password = "f0f4c9473f3c8f041b68f826788a66782248be0c"  # Ganti dengan password database Anda
+# Dummy user data
+USER_DATA = {'username': 'user', 'password': 'pass'}
 
-def get_db_connection():
-    try:
-        connection = mysql.connector.connect(
-            host=hostname,
-            database=database,
-            user=db_username,
-            password=db_password,
-            port=port
-        )
-        if connection.is_connected():
-            return connection
-    except Error as e:
-        return str(e)
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        if username == USER_DATA['username'] and password == USER_DATA['password']:
+            # Jika login berhasil, redirect ke halaman sukses
+            return redirect(url_for('login_success'))
+        else:
+            # Jika login gagal, kembali ke halaman login dengan pesan error
+            return render_template('login.html', error="Invalid username or password. Please try again.")
+    
+    return render_template('login.html')
 
-@app.route('/')
-def index():
-    connection_status = get_db_connection()
-    if isinstance(connection_status, str):
-        # Return error message
-        return f"Error connecting to the database: {connection_status}"
-    else:
-        # Close the connection and return success message
-        connection_status.close()
-        return "Successfully connected to the database."
+@app.route('/login_success')
+def login_success():
+    return "Login successful! Welcome to the application."
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
