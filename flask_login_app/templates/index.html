@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
-   <!-- Apple Touch Icon -->
+    <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <!-- Favicon Icons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -12,7 +12,7 @@
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <!-- Manifest -->
     <link rel="manifest" href="/static/site.webmanifest">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -42,5 +42,251 @@
         <p>This is the main content area.</p>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sign-In and Review System</title>
+    <!-- Bootstrap CSS dari CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        .user-info, .review-section {
+            margin-top: 20px;
+        }
+        .review-item {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+        .review-item img {
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        .review-item .review-content {
+            max-width: 600px;
+        }
+        .stars {
+            font-size: 1.5rem;
+            color: gold;
+            display: inline-block;
+            position: relative;
+        }
+        .stars input {
+            display: none;
+        }
+        .stars label {
+            cursor: pointer;
+            color: #ccc;
+        }
+        .stars input:checked ~ label {
+            color: gold;
+        }
+        .stars label:hover, .stars label:hover ~ label {
+            color: gold;
+        }
+        .stars input:checked ~ label:hover, .stars input:checked ~ label:hover ~ label {
+            color: gold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Google Sign-In and Reviews</h1>
+        <button id="sign-in-btn" class="btn btn-primary">Sign In with Google</button>
+        <div id="user-info" class="user-info"></div>
+
+        <!-- Review Form -->
+        <div id="review-form" class="review-section d-none">
+            <h2 class="mb-3">Submit a Review</h2>
+            <form id="submit-review-form">
+                <div class="mb-3">
+                    <textarea class="form-control" id="review-text" rows="3" placeholder="Write your review here..." required></textarea>
+                </div>
+                <div class="mb-3">
+                    <div class="stars">
+                        <input type="radio" id="star5" name="rating" value="5" required>
+                        <label for="star5">&#9733;</label>
+                        <input type="radio" id="star4" name="rating" value="4">
+                        <label for="star4">&#9733;</label>
+                        <input type="radio" id="star3" name="rating" value="3">
+                        <label for="star3">&#9733;</label>
+                        <input type="radio" id="star2" name="rating" value="2">
+                        <label for="star2">&#9733;</label>
+                        <input type="radio" id="star1" name="rating" value="1">
+                        <label for="star1">&#9733;</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">Submit Review</button>
+            </form>
+        </div>
+
+        <!-- Reviews List -->
+        <div id="reviews-list" class="review-section">
+            <h2 class="mb-3">Reviews</h2>
+            <div id="reviews-container"></div>
+        </div>
+
+        <button id="sign-out-btn" class="btn btn-secondary d-none">Sign Out</button>
+    </div>
+
+    <!-- Firebase scripts -->
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+      import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+      import { getFirestore, collection, addDoc, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
+
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+          apiKey: "AIzaSyDIIzfWGp4t3yw5XODdf-EFRV34wmIOvlM",
+          authDomain: "akanihon-7863b.firebaseapp.com",
+          projectId: "akanihon-7863b",
+          storageBucket: "akanihon-7863b.appspot.com",
+          messagingSenderId: "400908832871",
+          appId: "1:400908832871:web:5c61eb370f0c26f1e004c2",
+          measurementId: "G-6C92X6GCXN"
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      const analytics = getAnalytics(app);
+
+      // Google Sign-In provider
+      const provider = new GoogleAuthProvider();
+
+      // Sign in with Google
+      document.getElementById('sign-in-btn').addEventListener('click', () => {
+          signInWithPopup(auth, provider).then((result) => {
+              const user = result.user;
+              document.getElementById('user-info').innerHTML = `
+                  <h4>Welcome, ${user.displayName}</h4>
+                  <img src="${user.photoURL}" alt="Profile Picture" class="img-fluid rounded-circle" style="width: 100px;">
+              `;
+              document.getElementById('sign-out-btn').classList.remove('d-none');
+              document.getElementById('sign-in-btn').classList.add('d-none');
+              document.getElementById('review-form').classList.remove('d-none');
+              loadReviews();
+              checkUserReview(user.uid); // Check if the user has already submitted a review
+          }).catch((error) => {
+              console.error('Error during sign-in:', error);
+          });
+      });
+
+      // Sign out
+      document.getElementById('sign-out-btn').addEventListener('click', () => {
+          signOut(auth).then(() => {
+              document.getElementById('user-info').innerHTML = '';
+              document.getElementById('sign-in-btn').classList.remove('d-none');
+              document.getElementById('sign-out-btn').classList.add('d-none');
+              document.getElementById('review-form').classList.add('d-none');
+              document.getElementById('reviews-container').innerHTML = '';
+          }).catch((error) => {
+              console.error('Error during sign-out:', error);
+          });
+      });
+
+      // Monitor authentication state
+      onAuthStateChanged(auth, (user) => {
+          if (user) {
+              document.getElementById('user-info').innerHTML = `
+                  <h4>Welcome, ${user.displayName}</h4>
+                  <img src="${user.photoURL}" alt="Profile Picture" class="img-fluid rounded-circle" style="width: 100px;">
+              `;
+              document.getElementById('sign-in-btn').classList.add('d-none');
+              document.getElementById('sign-out-btn').classList.remove('d-none');
+              document.getElementById('review-form').classList.remove('d-none');
+              loadReviews();
+              checkUserReview(user.uid); // Check if the user has already submitted a review
+          } else {
+              document.getElementById('user-info').innerHTML = '';
+              document.getElementById('sign-in-btn').classList.remove('d-none');
+              document.getElementById('sign-out-btn').classList.add('d-none');
+              document.getElementById('review-form').classList.add('d-none');
+              document.getElementById('reviews-container').innerHTML = '';
+          }
+      });
+
+      // Load reviews from Firestore
+      function loadReviews() {
+          const reviewsContainer = document.getElementById('reviews-container');
+          const reviewsCollection = collection(db, 'reviews');
+
+          onSnapshot(reviewsCollection, (snapshot) => {
+              reviewsContainer.innerHTML = '';
+              snapshot.forEach((doc) => {
+                  const review = doc.data();
+                  reviewsContainer.innerHTML += `
+                      <div class="review-item">
+                          <img src="${review.photoURL}" alt="User Photo" style="width: 50px; height: 50px;">
+                          <div class="review-content">
+                              <strong>${review.user}</strong> <small class="text-muted">(${review.email})</small>
+                              <div class="stars">
+                                  ${'★'.repeat(review.rating)}
+                                  ${'☆'.repeat(5 - review.rating)}
+                              </div>
+                              <p>${review.text}</p>
+                          </div>
+                      </div>
+                  `;
+              });
+          });
+      }
+
+      // Check if the current user has already submitted a review
+      async function checkUserReview(userId) {
+          const q = query(collection(db, 'reviews'), where('userId', '==', userId));
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+              document.getElementById('submit-review-form').classList.add('d-none');
+              document.getElementById('review-text').value = 'You have already submitted a review.';
+          } else {
+              document.getElementById('submit-review-form').classList.remove('d-none');
+          }
+      }
+
+      // Submit a review
+      document.getElementById('submit-review-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const reviewText = document.getElementById('review-text').value;
+          const rating = document.querySelector('input[name="rating"]:checked').value;
+          const user = auth.currentUser;
+
+          if (user) {
+              try {
+                  await addDoc(collection(db, 'reviews'), {
+                      user: user.displayName,
+                      text: reviewText,
+                      userId: user.uid, // Store the userId with the review
+                      photoURL: user.photoURL, // Store the user's photo URL
+                      email: user.email, // Store the user's email
+                      rating: parseInt(rating) // Store the user's rating
+                  });
+                  document.getElementById('review-text').value = '';
+                  checkUserReview(user.uid); // Ensure form visibility after submission
+              } catch (error) {
+                  console.error('Error adding review:', error);
+              }
+          }
+      });
+    </script>
 </body>
 </html>
