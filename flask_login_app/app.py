@@ -1,17 +1,28 @@
-from flask import Flask, send_from_directory, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for
 import os
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return send_from_directory('', 'login.html')
+# Dummy user data
+USER_DATA = {'username': 'user', 'password': 'pass'}
+
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        if username == USER_DATA['username'] and password == USER_DATA['password']:
+            return redirect(url_for('welcome'))
+        else:
+            return render_template('login.html', error="Invalid credentials, please try again.")
+    
+    return render_template('login.html')
 
 @app.route('/welcome')
 def welcome():
     return "Welcome to the protected area!"
 
 if __name__ == '__main__':
-    # Get the PORT from the environment variable or default to 5000
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    port = int(os.environ.get('PORT', 5000))  # Mengambil PORT dari variabel lingkungan
+    app.run(host='0.0.0.0', port=port, debug=True)  # Menggunakan host 0.0.0.0
