@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template
 import mysql.connector
 from mysql.connector import Error
 import os
@@ -27,36 +27,18 @@ def get_db_connection():
         print("Error while connecting to MySQL", e)
         return None
 
-@app.route('/', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        
-        connection = get_db_connection()
-        if connection:
-            cursor = connection.cursor()
-            query = "SELECT * FROM users WHERE email = %s AND password = %s"
-            cursor.execute(query, (email, password))
-            user = cursor.fetchone()
-            cursor.close()
-            connection.close()
-            
-            if user:
-                # Jika login berhasil, redirect ke halaman sukses
-                return redirect(url_for('login_success'))
-            else:
-                # Jika login gagal, kembali ke halaman login dengan pesan error
-                return render_template('login.html', error="Invalid email or password. Please try again.")
-        else:
-            # Jika koneksi gagal, tampilkan pesan error umum
-            return render_template('login.html', error="Error connecting to the database.")
-    
-    return render_template('login.html')
-
-@app.route('/login_success')
-def login_success():
-    return "Login successful! Welcome to the application."
+@app.route('/')
+def index():
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users")
+        users = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return render_template('index.html', users=users)
+    else:
+        return "Error connecting to the database."
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
